@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 .vitest/
+.shopware/
 *.tgz
 .DS_Store
 

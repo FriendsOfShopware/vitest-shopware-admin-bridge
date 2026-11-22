@@ -138,7 +138,21 @@ for (const moduleName of administrationModules) {
 
 const services: ShopwareTestServices = {
     acl: { can: vi.fn() },
-    feature: { isActive: vi.fn() },
+    // Mirrors the static Feature API of the Administration, including the
+    // deprecation helpers added on trunk, so core code never calls a missing
+    // method on the mock (e.g. the Shopware.State getter guards itself with
+    // Feature.triggerDeprecationOrThrow()).
+    feature: {
+        isActive: vi.fn(),
+        isRegistered: vi.fn(),
+        isKnownMajor: vi.fn(),
+        getAll: vi.fn(),
+        init: vi.fn(),
+        silence: vi.fn(),
+        isSilenced: vi.fn(),
+        setSilenceCheck: vi.fn(),
+        triggerDeprecationOrThrow: vi.fn(),
+    },
     repositoryFactory: { create: vi.fn() },
     userConfigService: { search: vi.fn(), upsert: vi.fn() },
 };
@@ -151,6 +165,16 @@ function resetServiceDefaults(): void {
     services.acl.can.mockReset().mockImplementation((privilege?: string) =>
         !privilege || aclRoles === null || aclRoles.has(privilege));
     services.feature.isActive.mockReset().mockImplementation((flag: string) => activeFeatureFlags.has(flag));
+    services.feature.isRegistered.mockReset().mockImplementation((flag: string) => activeFeatureFlags.has(flag));
+    services.feature.isKnownMajor.mockReset().mockImplementation(() => true);
+    services.feature.getAll.mockReset().mockImplementation(() => ({ ...(globalThis as any)._features_ }));
+    services.feature.init.mockReset();
+    services.feature.silence.mockReset().mockImplementation((_flag: string, callback: () => unknown) => callback());
+    services.feature.isSilenced.mockReset().mockImplementation(() => false);
+    services.feature.setSilenceCheck.mockReset();
+    // The bridge keeps deprecated facades such as Shopware.State usable, so the
+    // guard records calls instead of warning or throwing. Tests can override it.
+    services.feature.triggerDeprecationOrThrow.mockReset();
     services.repositoryFactory.create.mockReset().mockImplementation(() => ({
         create: vi.fn(() => ({})),
         get: vi.fn().mockResolvedValue(null),
