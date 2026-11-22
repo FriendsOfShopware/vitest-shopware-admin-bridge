@@ -150,6 +150,11 @@ Default service mocks reset before every test. ACL allows access by default,
 feature flags are inactive, user configuration is empty, and repository calls
 return empty results.
 
+The feature mock mirrors the full static `Feature` API, including trunk's
+deprecation helpers: `triggerDeprecationOrThrow()` records calls without
+warning or throwing, so deprecated facades such as `Shopware.State` remain
+usable in tests.
+
 ```ts
 import {
     getShopwareTestServices,

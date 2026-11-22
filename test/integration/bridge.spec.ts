@@ -248,6 +248,29 @@ describe('Shopware Vitest bridge', () => {
         expect(services.feature.isActive('FEATURE_NEXT')).toBe(false);
     });
 
+    it('mocks the Feature deprecation guard used by trunk', () => {
+        const services = getShopwareTestServices();
+
+        // The trunk Shopware.State getter calls this through Shopware.Feature.
+        expect(() => Shopware.State).not.toThrow();
+        expect(() => services.feature.triggerDeprecationOrThrow(
+            'V6_8_0_0',
+            'Shopware.State is deprecated. Use Shopware.Store instead.',
+        )).not.toThrow();
+        expect(services.feature.triggerDeprecationOrThrow).toHaveBeenCalledWith(
+            'V6_8_0_0',
+            'Shopware.State is deprecated. Use Shopware.Store instead.',
+        );
+        expect(services.feature.silence('V6_8_0_0', () => 'silenced result')).toBe('silenced result');
+        expect(services.feature.isSilenced('V6_8_0_0')).toBe(false);
+        expect(services.feature.isKnownMajor('V6_8_0_0')).toBe(true);
+        expect(services.feature.isRegistered('FEATURE_NEXT')).toBe(false);
+
+        setFeatureFlags(['FEATURE_NEXT']);
+        expect(services.feature.isRegistered('FEATURE_NEXT')).toBe(true);
+        expect(services.feature.getAll()).toMatchObject({ FEATURE_NEXT: true });
+    });
+
     it('allows deliberate output when strict console mode is enabled', () => {
         allowConsoleMessage('expected bridge warning', 'warn');
         console.warn('expected bridge warning');
